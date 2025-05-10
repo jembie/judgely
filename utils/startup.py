@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from utils.config import PID_FILE, OLLAMA_START
 import time
+import socket
 
 
 def is_processing_running(pid: int) -> bool:
@@ -41,6 +42,7 @@ def start_ollama() -> subprocess.Popen | None:
     process = subprocess.Popen(OLLAMA_START, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=True)
 
     PID_FILE.write_text(str(process.pid))
+
     return process
 
 
@@ -66,12 +68,27 @@ def _singal_handler(signal_number, frame):
     sys.exit(0)
 
 
+def _wait_for_port(host: str = "localhost", port: int = 11434, timeout: float = 10.0, interval: float = 0.1):
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            with socket.create_connection(address=(host, port), timeout=1):
+                return
+        except OSError:
+            pass
+
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"Port {port} not open after {timeout}s")
+
+        time.sleep(interval)
+
+
 def launch():
     ollama_process = start_ollama()
 
     if ollama_process:
         # Currently we are too fast until the Connection is fully established, hence we sleep to assure that it is connected
-        time.sleep(3)
+        _wait_for_port()
         atexit.register(lambda: kill_ollama(ollama_process))
         for sig in (signal.SIGINT, signal.SIGTERM):
             signal.signal(sig, _singal_handler)
