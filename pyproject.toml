@@ -1,0 +1,7 @@
+[project]
+name = "judgely"
+version = "0.1.0"
+description = "LLM Court - Judgment Day"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
