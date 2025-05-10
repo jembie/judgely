@@ -1,12 +1,13 @@
-import subprocess
+import atexit
 import os
 import signal
-import atexit
-import sys
-from pathlib import Path
-from utils.config import PID_FILE, OLLAMA_START
-import time
 import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from utils.config import OLLAMA_START, PID_FILE
 
 
 def is_processing_running(pid: int) -> bool:
@@ -39,7 +40,12 @@ def start_ollama() -> subprocess.Popen | None:
         except Exception:
             pass
 
-    process = subprocess.Popen(OLLAMA_START, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=True)
+    process = subprocess.Popen(
+        OLLAMA_START,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
 
     PID_FILE.write_text(str(process.pid))
 
@@ -68,7 +74,12 @@ def _singal_handler(signal_number, frame):
     sys.exit(0)
 
 
-def _wait_for_port(host: str = "localhost", port: int = 11434, timeout: float = 10.0, interval: float = 0.1):
+def _wait_for_port(
+    host: str = "localhost",
+    port: int = 11434,
+    timeout: float = 10.0,
+    interval: float = 0.1,
+):
     deadline = time.monotonic() + timeout
     while True:
         try:

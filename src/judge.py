@@ -1,5 +1,6 @@
+from typing import Dict, List, Optional
+
 from ollama import ChatResponse, _client
-from typing import Optional, List, Dict
 
 
 class Judge:
