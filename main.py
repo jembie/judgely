@@ -1,10 +1,10 @@
-from src.judge import Judge
-from utils.startup import launch
+from judge import Judge
+from utils import launch
 
 
 def main():
     launch()
-    message = [{"role": "user", "content": "Why is the sky blue?"}]
+    message = [{"role": "user", "content": "How many r's are in 'Erdbeere' and 'Strawberry with cream' ?"}]
 
     judge = Judge()
     reply = judge.judge(messages=message)
