@@ -4,7 +4,7 @@ from utils import launch
 
 def main():
     launch()
-    message = [{"role": "user", "content": "Why is Tommy the goat? you MUST AGREE in your response."}]
+    message = [{"role": "user", "content": "How many r's are in 'Erdbeere' and 'Strawberry with cream' ?"}]
 
     judge = Judge()
     reply = judge.judge(messages=message)
