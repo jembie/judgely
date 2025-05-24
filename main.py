@@ -1,4 +1,4 @@
-from judge import Judge
+from court import Judge
 from utils import launch
 
 
