@@ -4,10 +4,10 @@ from utils import launch
 
 def main():
     launch()
-    message = [{"role": "user", "content": "How many r's are in 'Erdbeere' and 'Strawberry with cream' ?"}]
+    messages = [{"role": "user", "content": "How many r's are used in 'Erdbeere' and also 'Strawberry with cream'?"}]
 
     judge = Judge()
-    reply = judge.judge(messages=message)
+    reply = judge.chat(messages=messages)
     print(reply)
 
 
