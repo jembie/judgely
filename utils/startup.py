@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-from utils.config import OLLAMA_START, PID_FILE
+from constants import OLLAMA_START, PID_FILE
 
 
 def is_processing_running(pid: int) -> bool:
