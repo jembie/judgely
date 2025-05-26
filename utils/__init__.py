@@ -1,4 +1,5 @@
 from .startup import launch
-from .config import PID_FILE, OLLAMA_START
+from .constants import PID_FILE, OLLAMA_START, BASE_PATH
+
 
 __all__ = ["launch"]
