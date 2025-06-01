@@ -29,7 +29,9 @@ class TestSetGenerator:
 
         results = {}
         for dataset_name, df in self.csv_dict.items():
-            df_len = len(df)
+            df_len = len(df) - 1
+
+            # Generate a np.ndarray[amount] with values ranging within the interval of [0, LAST_ROW]
             random_sequence = rng.integers(low=0, high=df_len, size=amount)
             results[dataset_name] = df.iloc[random_sequence]
 
