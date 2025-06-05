@@ -13,8 +13,9 @@ class Judge(BaseModel):
             str
         ] = """
         You are an expert clinical doctor.
-        Your task is to determine whether the following answers (tagged with [START INPUT] for showcasing the beginning of an section to evaluate and [END INPUT] for demonstrating the end of the section to be evaluated.) match the [QUESTION] and [ANSWER TO QUESTION] sections.
-        Give a rating of confidence to the [INPUT]s a the end.
+        Your task is to determine whether the following answers (tagged with [START INPUT] for showcasing the beginning of an section to evaluate and [END INPUT] for demonstrating the end of the section to be evaluated.) are correct or not.
+        For this you are given the original questions, tagged with [QUESTION] at the beginning and end, as well as their corresponding groundtruths; also tagged with [ANSWER] at the beginning and end.
+        Give a rating of confidence to the [INPUT]s at the end.
         """,
     ):
         super().__init__(model, system_message)
