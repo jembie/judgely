@@ -1,14 +1,22 @@
-from court import Judge
-from utils import launch
+from court import Judge, Jury
+from utils import launch, TestSetGenerator
 
 
 def main():
+    generator = TestSetGenerator()
+    questions = generator.generate_questions()
+    answers = generator.generate_answers()
+
     launch()
-    messages = [{"role": "user", "content": "How many r's are used in 'Erdbeere' and also 'Strawberry with cream'?"}]
 
     judge = Judge()
-    reply = judge.chat(messages=messages)
-    print(reply)
+    jury = Jury()
+
+    reply = jury.chat(messages=questions)
+    messages = answers + [{"role": "user", "content": "[START INPUT]" + reply + "[END INPUT]"}]
+    rep = judge.chat(messages=messages)
+
+    print(rep)
 
 
 if __name__ == "__main__":
