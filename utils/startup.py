@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-from constants import OLLAMA_START, PID_FILE
+from .constants import OLLAMA_START, PID_FILE
 
 
 def is_processing_running(pid: int) -> bool:
@@ -48,6 +48,7 @@ def start_ollama() -> subprocess.Popen | None:
     )
 
     PID_FILE.write_text(str(process.pid))
+    print(f"[ollama] started under PID {process.pid}")
 
     return process
 
