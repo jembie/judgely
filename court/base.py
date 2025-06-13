@@ -19,6 +19,7 @@ class BaseTemplate(ABC):
         self.system_message_dict = {"role": "system", "content": system_message}
 
     def chat(self, messages: List[Dict]) -> str | None:
-        response: ChatCompletion = self.client.chat.completions.create(messages=messages, model=self.model)
+        # set the `temperature` to `0.0` to have consistency in the evaluation. Might lead to worse results at times, but we rather want to be consistency (slightly) worse than have random lucky shots of success.
+        response: ChatCompletion = self.client.chat.completions.create(messages=messages, model=self.model, temperature=0.0)
         # This returns the raw string output of the model. If it's a 'thinking' capable mode, then the '<think> ... </think>' content is included within the string.
-        return response.message.content or f"Chatting with {self.__class__.__name__} has failed."
+        return response.choices[0].message.content or f"Chatting with {self.__class__.__name__} has failed."
