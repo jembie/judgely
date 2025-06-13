@@ -1,15 +1,24 @@
 from typing import Dict, List, Optional
-from ollama import ChatResponse, Client
-from abc import ABC, abstractmethod
+from openai import OpenAI
+from openai.types.chat import ChatCompletion
+from abc import ABC
+from utils import ClientConfig
 
 
-class BaseModel(ABC):
+class BaseTemplate(ABC):
 
-    def __init__(self, model: Optional[str] = "", system_message: Optional[str] = ""):
-        self.client = Client()
+    def __init__(self, model: Optional[str] = "", system_message: Optional[str] = "", *, client_config: Optional[ClientConfig] = None):
+        self.client = (
+            OpenAI(base_url=client_config.base_url, api_key=client_config.api_key)
+            if client_config
+            else OpenAI(base_url="http://localhost:11434/v1/", api_key="ollama")
+        )
+
         self.model = model
         self.system_message = system_message
         self.system_message_dict = {"role": "system", "content": system_message}
 
-    @abstractmethod
-    def chat(self, messages: List[Dict]) -> ChatResponse: ...
+    def chat(self, messages: List[Dict]) -> str | None:
+        response: ChatCompletion = self.client.chat.completions.create(messages=messages, model=self.model)
+        # This returns the raw string output of the model. If it's a 'thinking' capable mode, then the '<think> ... </think>' content is included within the string.
+        return response.message.content or f"Chatting with {self.__class__.__name__} has failed."
