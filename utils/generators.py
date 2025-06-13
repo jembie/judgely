@@ -38,8 +38,8 @@ class TestSetGenerator:
 
         return results
 
-    def generate_questions(self) -> List[Dict]:
-        question_set = self.generate_set(amount=3)
+    def generate_questions(self, amount: int = 5) -> List[Dict]:
+        question_set = self.generate_set(amount=amount)
         question_template = {"role": "user", "content": ""}
 
         results = []
