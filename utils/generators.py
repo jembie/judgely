@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, TypedDict
 import numpy as np
 from dataclasses import dataclass
 
@@ -7,10 +7,18 @@ from .constants import BASE_PATH
 from pathlib import Path
 
 
+class Message(TypedDict):
+    role: str
+    content: str
+
+
+MessageTemplate: Message = {"role": "user", "content": ""}
+
+
 @dataclass
 class DataHolder:
-    questions: pd.DataFrame
-    answers: pd.DataFrame
+    questions: List[Message]
+    answers: List[Message]
     rows_used: np.ndarray
     qtype: str
     qtype_total_entries: int
@@ -84,14 +92,12 @@ class BalancedGenerator:
                     )
                 )
 
-    def _generate_questions_answers(self, df: pd.DataFrame) -> Tuple[List[Dict], List[Dict]]:
-        template = {"role": "user", "content": ""}
-
+    def _generate_questions_answers(self, df: pd.DataFrame) -> Tuple[List[Message], List[Message]]:
         questions = []
         answers = []
         for row in df.itertuples():
-            questions_template = template.copy()
-            answers_template = template.copy()
+            questions_template = MessageTemplate.copy()
+            answers_template = MessageTemplate.copy()
 
             questions_template["content"] = row.Question
             answers_template["content"] = row.Answer
