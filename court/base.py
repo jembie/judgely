@@ -2,7 +2,7 @@ from typing import Dict, List, Optional
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from abc import ABC
-from utils import ClientConfig
+from utils import ClientConfig, Message
 
 
 class BaseTemplate(ABC):
@@ -18,8 +18,8 @@ class BaseTemplate(ABC):
         self.system_message = system_message
         self.system_message_dict = {"role": "system", "content": system_message}
 
-    def chat(self, messages: List[Dict]) -> str | None:
-        messages = [self.system_message_dict] + messages
+    def chat(self, message: Message) -> str | None:
+        messages = [self.system_message_dict] + [message]
         # set the `temperature` to `0.0` to have consistency in the evaluation. Might lead to worse results at times, but we rather want to be consistency (slightly) worse than have random lucky shots of success.
         response: ChatCompletion = self.client.chat.completions.create(messages=messages, model=self.model, temperature=0.0)
         # This returns the raw string output of the model. If it's a 'thinking' capable mode, then the '<think> ... </think>' content is included within the string.
