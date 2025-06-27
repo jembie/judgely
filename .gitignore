@@ -14,3 +14,7 @@ wheels/
 
 # Custom Data files
 data/
+
+
+# Environment files
+.env
