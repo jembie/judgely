@@ -20,4 +20,4 @@ class Judge(BaseTemplate):
         *,
         client_config: Optional[ClientConfig] = None,
     ):
-        super().__init__(model, system_message)
+        super().__init__(model, system_message, client_config=client_config)
