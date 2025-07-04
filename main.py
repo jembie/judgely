@@ -1,7 +1,10 @@
-from court import Judge, Jury
-from utils import TestSetGenerator, ClientConfig
-from dotenv import load_dotenv
 import os
+
+from dotenv import load_dotenv
+
+from court import Judge, Jury
+from pipeline import Pipeline
+from utils import BalancedGenerator, ClientConfig
 
 load_dotenv()
 
@@ -9,23 +12,21 @@ BASE_URL = os.environ.get("BASE_URL")
 API_KEY = os.environ.get("API_KEY")
 
 
-def run():
+def run(iterations: int = 5):
     config = ClientConfig(BASE_URL, API_KEY)
-    # generator = TestSetGenerator()
-    # questions = generator.generate_questions(amount=1)
-    question_template = {"role": "user", "content": "What is the point of points?"}
+    generator = BalancedGenerator()
+    generator.generate_set(amount=1)
 
-    # launch()
-    jury = Jury(model="llama-3.1-70b-instruct-q4km", client_config=config)
+    # # launch()
+    jury = Jury(model="Llama-4-Maverick-17B-128E-Instruct-FP8", client_config=config)
+    judge = Judge(model="Llama-4-Maverick-17B-128E-Instruct-FP8", client_config=config)
 
-    reply = jury.chat(messages=question_template)
-    print(reply)
+    pipeline = Pipeline(judge=judge, jury=jury, generator=generator)
 
-
-def main():
-    # answers = generator.generate_answers()
-    run()
+    # Run multiple iterations for analysis
+    for _ in range(iterations):
+        pipeline.query()
 
 
 if __name__ == "__main__":
-    main()
+    run()
