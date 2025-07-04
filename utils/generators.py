@@ -1,10 +1,11 @@
-import pandas as pd
-from typing import Dict, List, Tuple, TypedDict
-import numpy as np
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Tuple, TypedDict
+
+import numpy as np
+import pandas as pd
 
 from .constants import BASE_PATH
-from pathlib import Path
 
 
 class Message(TypedDict):
