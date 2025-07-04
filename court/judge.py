@@ -1,8 +1,8 @@
-from typing import Dict, List, Optional
-from openai import OpenAI
-from .base import BaseTemplate
-import pandas as pd
+from typing import Optional
+
 from utils import ClientConfig
+
+from .base import BaseTemplate
 
 
 class Judge(BaseTemplate):
