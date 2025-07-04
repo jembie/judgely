@@ -1,6 +1,8 @@
 from typing import Optional
-from .base import BaseTemplate
+
 from utils import ClientConfig
+
+from .base import BaseTemplate
 
 
 class Jury(BaseTemplate):
