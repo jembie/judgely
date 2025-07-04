@@ -12,9 +12,9 @@ class Judge(BaseTemplate):
         model: Optional[str] = "deepseek-r1-1.5b-max",
         system_message: Optional[
             str
-        ] = """You are an assistant that always responds in the following format:
-            - Answer: <YOUR ANSWER>.
-            - Score: a score from 1 to 5.
+        ] = """You are an assistant that receives two text snippets and must compare their semantic meaning. You will always responds in the following format:
+            - Answer, either one of those rankings: ["No semantic relation at all", "Same domain, but no matching semantical meaning", "Some matching semantical meaning", "Great match in semantical meaning", "Identical semantic meaning"]
+            - Score: a score from 1 to 5 of how semantically similar they are.
             - Reason: a reasoning for your choice of score.
             """,
         *,
