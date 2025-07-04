@@ -10,7 +10,7 @@ class Jury(BaseTemplate):
     def __init__(
         self,
         model: Optional[str] = "deepseek-r1:8b",
-        system_message: Optional[str] = "You are an expert clinical Doctor",
+        system_message: Optional[str] = "",
         *,
         client_config: Optional[ClientConfig] = None,
     ):
