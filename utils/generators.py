@@ -20,11 +20,10 @@ MessageTemplate: Message = {"role": "user", "content": ""}
 class DataHolder:
     questions: List[Message]
     answers: List[Message]
-    rows_used: np.ndarray
     qtype: str
-    qtype_total_entries: int
-    data_set_name: str
-    original_indices: list
+    total_entries: int
+    dataset_name: str
+    indices: np.ndarray
 
 
 class BalancedGenerator:
@@ -59,37 +58,36 @@ class BalancedGenerator:
         return True
 
     def generate_set(self, seed: int = 42, amount: int = 5) -> Dict[str, pd.DataFrame]:
-        rng = np.random.default_rng(seed=seed)
+        np.random.seed(seed=seed)
 
         for dataset_name, df in self.csv_dict.items():
             unique_qtypes = self._get_unique_qtypes(df)
 
             for qtype in unique_qtypes:
-                original_indices = df[df["qtype"] == qtype].drop_duplicates(subset=["Question"]).index.values.tolist()
-                subset_df = df[df["qtype"] == qtype].drop_duplicates(subset=["Question"]).reset_index()
-                df_len = len(subset_df)
+                qtype_df = df[df["qtype"] == qtype].drop_duplicates(subset=["Question"])
+                qtype_indices = qtype_df.index.values.tolist()
+                qtype_len = len(qtype_df)
 
                 # Make sure that the input is amount <= df_len
-                self._validate_amount(amount=amount, df_len=df_len)
+                self._validate_amount(amount=amount, df_len=qtype_len)
 
                 # Generate a np.ndarray[amount] with values ranging within the interval of [0, LAST_ROW] of the qtype
                 try:
-                    random_sequence = rng.integers(low=0, high=df_len - 1, size=amount)
+                    random_sequence = np.random.choice(qtype_indices, size=amount, replace=False)
                 except Exception:
-                    print(f"[ERROR] while trying to parse rng.integers with {df_len =}")
+                    print(f"[ERROR] while trying to parse np.random.choice with {qtype_len =}")
 
-                chosen_rows = subset_df.iloc[random_sequence]
+                chosen_rows = qtype_df.loc[random_sequence]
                 questions, answers = self._generate_questions_answers(chosen_rows)
 
                 self.data.append(
                     DataHolder(
                         qtype=qtype,
-                        data_set_name=dataset_name,
+                        dataset_name=dataset_name,
                         questions=questions,
                         answers=answers,
-                        qtype_total_entries=df_len,
-                        rows_used=random_sequence,
-                        original_indices=original_indices,
+                        total_entries=qtype_len,
+                        indices=random_sequence,
                     )
                 )
 
