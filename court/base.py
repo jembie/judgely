@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Optional
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from abc import ABC
