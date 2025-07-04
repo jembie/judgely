@@ -7,7 +7,7 @@ from utils import ClientConfig, Message
 
 class BaseTemplate(ABC):
 
-    def __init__(self, model: Optional[str] = "", system_message: Optional[str] = "", *, client_config: Optional[ClientConfig] = None):
+    def __init__(self, model: str, system_message: Optional[str] = "", *, client_config: Optional[ClientConfig] = None):
         self.client = (
             OpenAI(base_url=client_config.base_url, api_key=client_config.api_key)
             if client_config
