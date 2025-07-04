@@ -9,6 +9,12 @@ from pathlib import Path
 
 from .constants import OLLAMA_START, PID_FILE
 
+"""TODO:
+    - While running the code in `DEBUG` mode and crashing due to an error, we instantiate an orphant process, which would be killed if we execute the code again normally.
+    - However, if we were to run the code in `DEBUG` mode again, another orphan ends up spawning, which makes any future execution impossible, as ollama cannot create a connection successfully.
+    - Thus, processing killing must be conducted more throughly in the future.
+"""
+
 
 def is_processing_running(pid: int) -> bool:
     """

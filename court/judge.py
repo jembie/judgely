@@ -1,27 +1,23 @@
-from typing import Dict, List, Optional
-from ollama import ChatResponse
-from .base import BaseModel
-import pandas as pd
+from typing import Optional
+
+from utils import ClientConfig
+
+from .base import BaseTemplate
 
 
-class Judge(BaseModel):
+class Judge(BaseTemplate):
 
     def __init__(
         self,
         model: Optional[str] = "deepseek-r1-1.5b-max",
         system_message: Optional[
             str
-        ] = """
-        You are an expert clinical doctor.
-        Your task is to determine whether the following answers (tagged with [START INPUT] for showcasing the beginning of an section to evaluate and [END INPUT] for demonstrating the end of the section to be evaluated.) are correct or not.
-        For this you are given the original questions, tagged with [QUESTION] at the beginning and end, as well as their corresponding groundtruths; also tagged with [ANSWER] at the beginning and end.
-        Give a rating of confidence to the [INPUT]s at the end.
-        """,
+        ] = """You are an assistant that receives two text snippets and must compare their semantic meaning. You will always responds in the following format:
+            - Answer, either one of those rankings: ["No semantic relation at all", "Same domain, but no matching semantical meaning", "Some matching semantical meaning", "Great match in semantical meaning", "Identical semantic meaning"]
+            - Score: a score from 1 to 5 of how semantically similar they are.
+            - Reason: a reasoning for your choice of score.
+            """,
+        *,
+        client_config: Optional[ClientConfig] = None,
     ):
-        super().__init__(model, system_message)
-
-    def chat(self, messages: List[Dict]) -> str:
-        full_message = [self.system_message_dict] + messages
-
-        response: ChatResponse = self.client.chat(self.model, messages=full_message)
-        return response.message.content or "Chatting with Judge failed."
+        super().__init__(model, system_message, client_config=client_config)
