@@ -21,31 +21,6 @@ class Pipeline:
         for index, answer in enumerate(dataholder.answers):
             answer["content"] = f"1:\n{answer["content"]}\n 2:{jury_replies[index]}"
 
-    def _convert_replies_into_dataframe(self, judge_replies: List[str]) -> pd.DataFrame:
-
-        dfs: List[pd.DataFrame] = []
-        for raw_reply in judge_replies:
-
-            entries = re.split(r"\n(?=- Answer:)", raw_reply.strip())
-
-            # Parse each entry into a dictionary
-            data = []
-            for entry in entries:
-                answer_match = re.search(r"- Answer:\s*(.*)", entry)
-                score_match = re.search(r"- Score:\s*(.*)", entry)
-                reason_match = re.search(r"- Reason:\s*(.*)", entry)
-
-                data.append(
-                    {
-                        "Answer": answer_match.group(1) if answer_match else None,
-                        "Score": float(score_match.group(1)) if score_match else None,
-                        "Reason": reason_match.group(1) if reason_match else None,
-                    }
-                )
-            dfs.append(pd.DataFrame(data=data))
-
-        return pd.concat(dfs, ignore_index=True)
-
     def _get_next_run_directory(self, results_path: Path) -> Path:
         if not results_path.exists():
             results_path.mkdir(parents=True)
@@ -73,6 +48,32 @@ class Pipeline:
 
         return results_path / f"run_{self._run_dir}"
 
+    def _convert_replies_into_dataframe(self, judge_replies: List[str], jury_replies: List[str]) -> pd.DataFrame:
+
+        dfs: List[pd.DataFrame] = []
+        for raw_reply in judge_replies:
+
+            entries = re.split(r"\n(?=- Answer:)", raw_reply.strip())
+
+            # Parse each entry into a dictionary
+            data = []
+            for index, entry in enumerate(entries):
+                answer_match = re.search(r"- Answer:\s*(.*)", entry)
+                score_match = re.search(r"- Score:\s*(.*)", entry)
+                reason_match = re.search(r"- Reason:\s*(.*)", entry)
+
+                data.append(
+                    {
+                        "Answer": answer_match.group(1) if answer_match else None,
+                        "Score": float(score_match.group(1)) if score_match else None,
+                        "Reason": reason_match.group(1) if reason_match else None,
+                        "Jury": jury_replies[index],
+                    }
+                )
+            dfs.append(pd.DataFrame(data=data))
+
+        return pd.concat(dfs, ignore_index=True)
+
     def _save_results(self, df: pd.DataFrame, dataholder: DataHolder) -> None:
         results_path = BASE_PATH / "data" / "results" / self.judge.model / dataholder.dataset_name
 
@@ -99,6 +100,6 @@ class Pipeline:
             for answer in dataholder.answers:
                 judge_replies.append(self.judge.chat(answer))
 
-            df: pd.DataFrame = self._convert_replies_into_dataframe(judge_replies=judge_replies)
+            df: pd.DataFrame = self._convert_replies_into_dataframe(judge_replies=judge_replies, jury_replies=jury_replies)
 
             self._save_results(df=df, dataholder=dataholder)
