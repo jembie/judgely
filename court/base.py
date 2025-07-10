@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Optional
+from typing import Optional, final
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
@@ -20,6 +20,7 @@ class BaseTemplate(ABC):
         self.system_message = system_message
         self.system_message_dict = {"role": "system", "content": system_message}
 
+    @final
     def chat(self, message: Message) -> str | None:
         messages = [self.system_message_dict] + [message]
         # set the `temperature` to `0.0` to have consistency in the evaluation. Might lead to worse results at times, but we rather want to be consistency (slightly) worse than have random lucky shots of success.
