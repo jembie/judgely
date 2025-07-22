@@ -51,25 +51,24 @@ class Pipeline:
     def _convert_replies_into_dataframe(self, judge_replies: List[str], jury_replies: List[str]) -> pd.DataFrame:
 
         dfs: List[pd.DataFrame] = []
-        for raw_reply in judge_replies:
+        for index, raw_reply in enumerate(judge_replies):
 
-            entries = re.split(r"\n(?=- Answer:)", raw_reply.strip())
+            processed = re.split(r"\n(?=- Answer:)", raw_reply.strip())[0]
 
+            answer_match = re.search(r"- Answer:\s*(.*)", processed)
+            score_match = re.search(r"- Score:\s*(.*)", processed)
+            reason_match = re.search(r"- Reason:\s*(.*)", processed)
             # Parse each entry into a dictionary
-            data = []
-            for index, entry in enumerate(entries):
-                answer_match = re.search(r"- Answer:\s*(.*)", entry)
-                score_match = re.search(r"- Score:\s*(.*)", entry)
-                reason_match = re.search(r"- Reason:\s*(.*)", entry)
 
-                data.append(
-                    {
-                        "Answer": answer_match.group(1) if answer_match else None,
-                        "Score": float(score_match.group(1)) if score_match else None,
-                        "Reason": reason_match.group(1) if reason_match else None,
-                        "Jury": jury_replies[index],
-                    }
-                )
+            data = [
+                {
+                    "Answer": answer_match.group(1) if answer_match else None,
+                    "Score": float(score_match.group(1)) if score_match else None,
+                    "Reason": reason_match.group(1) if reason_match else None,
+                    "Jury": jury_replies[index],
+                }
+            ]
+
             dfs.append(pd.DataFrame(data=data))
 
         return pd.concat(dfs, ignore_index=True)
@@ -85,14 +84,14 @@ class Pipeline:
         df.index.name = "Position"
         df.to_csv(output_file)
 
-    def query(self):
+    def query(self, **kwargs):
         self._run_dir_set = False
 
         for dataholder in self.generator.data:
 
             jury_replies = []
             for question in dataholder.questions:
-                jury_replies.append(self.jury.chat(question))
+                jury_replies.append(self.jury.chat(question, **kwargs))
 
             self._prepare_data_for_judge(jury_replies=jury_replies, dataholder=dataholder)
 

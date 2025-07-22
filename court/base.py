@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Optional
+from typing import Optional, final
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
@@ -20,9 +20,12 @@ class BaseTemplate(ABC):
         self.system_message = system_message
         self.system_message_dict = {"role": "system", "content": system_message}
 
-    def chat(self, message: Message) -> str | None:
+    @final
+    def chat(self, message: Message, **kwargs) -> str | None:
         messages = [self.system_message_dict] + [message]
+        chat_params = {"temperature": 0.0, **kwargs}
+
         # set the `temperature` to `0.0` to have consistency in the evaluation. Might lead to worse results at times, but we rather want to be consistency (slightly) worse than have random lucky shots of success.
-        response: ChatCompletion = self.client.chat.completions.create(messages=messages, model=self.model, temperature=0.0)
+        response: ChatCompletion = self.client.chat.completions.create(messages=messages, model=self.model, **chat_params)
         # This returns the raw string output of the model. If it's a 'thinking' capable mode, then the '<think> ... </think>' content is included within the string.
         return response.choices[0].message.content or f"Chatting with {self.__class__.__name__} has failed."

@@ -12,6 +12,7 @@ dependencies = [
     "pandas>=2.2.3",
     "psutil>=7.0.0",
     "python-dotenv>=1.1.1",
+    "seaborn>=0.13.2",
 ]
 
 [dependency-groups]
