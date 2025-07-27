@@ -60,12 +60,12 @@ def _create_bar_plot(df: pd.DataFrame, qtype: str):
 
         plt.text(pos, max_val + 0.1, f"{max_val:.1f}", ha="center", va="bottom", fontweight="bold", fontsize=9, color=colors["max"])
         plt.text(pos, mean_val - 0.1, f"{mean_val:.1f}", ha="center", va="center", fontweight="bold", fontsize=9, color="black")
-        plt.text(pos, min_val / 2, f"{min_val:.1f}", ha="center", va="center", fontweight="bold", fontsize=9, color="black")
+        plt.text(pos, min_val / 2, f"{min_val:.1f}", ha="center", va="center", fontweight="bold", fontsize=9, color="white")
 
     plt.xticks(x_pos, df_plot["Position"], rotation=45, ha="right", fontsize=11)
     plt.xlabel(f"Question IDs for qtype: '{qtype}'", fontsize=14, fontweight="bold")
     plt.ylabel("Aggregated Score", fontsize=14, fontweight="bold")
-    plt.title("Overlapping View of Min, Mean, and Max Values", fontsize=16, fontweight="bold", pad=20)
+    plt.title("Model Scoring Consistency", fontsize=16, fontweight="bold", pad=20)
 
     plt.legend(loc="lower right", frameon=True, fancybox=True, shadow=True, fontsize=12, title="Score Statistics", title_fontsize=13)
     plt.grid(True, alpha=0.3, linestyle="--")
