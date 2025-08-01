@@ -1,1 +1,1 @@
-from .visualizations import read_csvs
+from .plots import read_csvs
