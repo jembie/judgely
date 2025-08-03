@@ -2,32 +2,43 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from utils import BASE_PATH
+from typing import Set, List, Dict
+from pathlib import Path
+from itertools import product
 
 
 import matplotlib.pyplot as plt
 
 
-def read_csvs():
+def contains_filetype(path: Path, filetype: str) -> Set[Path]:
+    return {csv_file.parent for csv_file in path.rglob(f"*.{filetype}")}
+
+
+def read_csvs() -> List[pd.DataFrame]:
     data_path = BASE_PATH / "data" / "results"
+    csv_dirs = contains_filetype(data_path, "csv")
 
-    files = [path for path in data_path.glob("**/*") if path.suffix == ".csv"]
+    subdir_frames = []
+    for csv_dir in csv_dirs:
+        dataframes = []
 
-    dataframes = []
-    for csv_file in files:
-        qtype = csv_file.stem
-        run_nr = csv_file.parent
+        csv_files = [f for f in csv_dir.glob("*.csv")]
+        for csv_file in csv_files:
 
-        df = pd.read_csv(csv_file, index_col="Position", usecols=["Position", "Answer", "Score"])
-        df["qtype"] = qtype
-        df["Answer"] = df["Answer"].str.replace('"', "", regex=False)
-        df["run_nr"] = run_nr
+            qtype = csv_file.stem
+            run_nr = csv_file.parent
 
-        dataframes.append(df)
+            df = pd.read_csv(csv_file, index_col="Position", usecols=["Position", "Answer", "Score"])
+            df["qtype"] = qtype
+            df["Answer"] = df["Answer"].str.replace('"', "", regex=False)
+            df["run_nr"] = run_nr.stem
 
-    df_concat = pd.concat(dataframes)
-    count(df_concat)
+            dataframes.append(df)
 
-    return df_concat
+        if dataframes:
+            subdir_frames.append(pd.concat(dataframes))
+
+    return _create_scatter_plot(subdir_frames)
 
 
 def _create_bar_plot(df: pd.DataFrame, qtype: str):
@@ -86,11 +97,33 @@ def count(df: pd.DataFrame) -> pd.DataFrame:
         _create_bar_plot(group_result, qtype)
 
 
-def _create_scatter_plot(df: pd.DataFrame, qtype: str):
-    qtypes = df["qtype"].unique()
+def _make_subset(df: pd.DataFrame, run: str, qtype: str) -> pd.DataFrame:
+    replacement_map = {
+        "No semantic relation at all meaning": 1.0,
+        "Same domain, but no matching semantical meaning": 2.0,
+        "Some matching semantical meaning": 3.0,
+        "Great match in semantical meaning": 4.0,
+        "Identical semantic meaning": 5.0,
+    }
 
-    for qtype in qtypes:
-        qtype_df = df[df["qtype"] == qtype]
+    mask = (df["run_nr"] == run) & (df["qtype"] == qtype)
+    subset = df.loc[mask]
+
+    subset.Answer.replace(to_replace=replacement_map, inplace=True)
+    return subset
+
+
+def _create_scatter_plot(dfs: List[pd.DataFrame]):
+
+    for df in dfs:
+
+        qtypes = df["qtype"].unique()
+        runs = df["run_nr"].unique()
+
+        cartesian_product = product(runs, qtypes)
+
+        for run, qtype in cartesian_product:
+            subset = _make_subset(df=df, run=run, qtype=qtype)
 
 
 if __name__ == "__main__":
