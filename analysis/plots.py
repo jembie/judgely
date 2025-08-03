@@ -8,6 +8,7 @@ from itertools import product
 
 
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 
 def contains_filetype(path: Path, filetype: str) -> Set[Path]:
@@ -38,7 +39,7 @@ def read_csvs() -> List[pd.DataFrame]:
         if dataframes:
             subdir_frames.append(pd.concat(dataframes))
 
-    return _create_scatter_plot(subdir_frames)
+    return scatter_plot(subdir_frames)
 
 
 def _create_bar_plot(df: pd.DataFrame, qtype: str):
@@ -113,7 +114,70 @@ def _make_subset(df: pd.DataFrame, run: str, qtype: str) -> pd.DataFrame:
     return subset
 
 
-def _create_scatter_plot(dfs: List[pd.DataFrame]):
+def _create_scatter(df: pd.DataFrame, qtype):
+
+    # Reset index to get Position as a column if needed
+    df_plot = df.reset_index()
+
+    plt.figure(figsize=(14, 8))
+    plt.style.use("seaborn-v0_8-whitegrid")
+
+    # Create x positions (numeric positions for plotting)
+    x_pos = np.arange(len(df_plot))
+
+    # Create a color palette with different colors for each unique Position/index
+    unique_positions = df_plot["Position"].unique()
+    colors = plt.cm.tab10(np.linspace(0, 1, len(unique_positions)))  # Use tab10 colormap
+    color_map = dict(zip(unique_positions, colors))
+
+    # Create scatter plot with both Score and Answer
+    for i, (pos_idx, row) in enumerate(df_plot.iterrows()):
+        position = row["Position"]
+        color = color_map[position]
+
+        _plot_scatter(i, row, "Score", "_", position, color)
+        _plot_scatter(i, row, "Answer", "|", position, color)
+
+    # Set x-axis labels to exact Position values (same as bar plot)
+    plt.xticks(x_pos, df_plot["Position"], ha="right", fontsize=11)
+    plt.yticks(range(6))
+    plt.ylim(0, 5.5)
+
+    # Customize the plot
+    plt.xlabel("Question IDs", fontsize=14, fontweight="bold")
+    plt.ylabel("Score", fontsize=14, fontweight="bold")
+    plt.title(f"Scoring and Answer Consistency for {qtype}", fontsize=16, fontweight="bold", pad=20)
+
+    plt.grid(True, alpha=0.3, linestyle="--")
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.15, right=0.85)  # Make room for legend
+    plt.gca().set_facecolor("white")
+
+    # Make Custom Legends
+    legend_elements = [
+        Line2D([0], [0], marker="_", color="gray", markersize=15, linestyle="None", label="Score"),
+        Line2D([0], [0], marker="|", color="gray", markersize=15, linestyle="None", label="Axis"),
+    ]
+    plt.legend(handles=legend_elements, loc="lower right", frameon=True, fancybox=True, shadow=True)
+
+    plt.show()
+
+
+def _plot_scatter(i, row, column, marker, position, color):
+    plt.scatter(
+        i,
+        row[column],
+        color=color,
+        marker=marker,
+        s=250,
+        alpha=0.8,
+        edgecolors="white",
+        linewidth=1.5,
+        label=f"Score - {position}" if i == 0 else "",
+    )
+
+
+def scatter_plot(dfs: List[pd.DataFrame]):
 
     for df in dfs:
 
@@ -123,7 +187,9 @@ def _create_scatter_plot(dfs: List[pd.DataFrame]):
         cartesian_product = product(runs, qtypes)
 
         for run, qtype in cartesian_product:
-            subset = _make_subset(df=df, run=run, qtype=qtype)
+            subset = _make_subset(df=df, run=run, qtype=qtype).sort_index()
+
+            _create_scatter(subset, qtype)
 
 
 if __name__ == "__main__":
