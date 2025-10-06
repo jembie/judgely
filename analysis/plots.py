@@ -15,7 +15,7 @@ def contains_filetype(path: Path, filetype: str) -> Set[Path]:
     return {csv_file.parent for csv_file in path.rglob(f"*.{filetype}")}
 
 
-def read_csvs() -> List[pd.DataFrame]:
+def make_plots() -> List[pd.DataFrame]:
     data_path = BASE_PATH / "data" / "results"
     csv_dirs = contains_filetype(data_path, "csv")
 
@@ -92,96 +92,77 @@ def count(df: pd.DataFrame) -> pd.DataFrame:
 
     for qtype in qytpes:
         qtype_df = df[df["qtype"] == qtype]
-
         group_result = qtype_df["Score"].groupby(["Position"]).agg(["mean", "min", "max"])
-
         _create_bar_plot(group_result, qtype)
 
 
-def _make_subset(df: pd.DataFrame, run: str, qtype: str) -> pd.DataFrame:
-    replacement_map = {
-        "No semantic relation at all meaning": 1.0,
-        "Same domain, but no matching semantical meaning": 2.0,
-        "Some matching semantical meaning": 3.0,
-        "Great match in semantical meaning": 4.0,
-        "Identical semantic meaning": 5.0,
-    }
-
-    mask = (df["run_nr"] == run) & (df["qtype"] == qtype)
-    subset = df.loc[mask]
-
-    subset.Answer.replace(to_replace=replacement_map, inplace=True)
-    return subset
-
-
-def create_scatter(df: pd.DataFrame, qtype):
+def create_scatter(df: pd.DataFrame, qtype, img_path: Path):
     # Reset index to get Position as a column if needed
     df_plot = df.reset_index()
     plt.figure(figsize=(14, 8))
     plt.style.use("seaborn-v0_8-whitegrid")
-
-    # Get unique positions and runs
     unique_positions = df_plot["Position"].unique()
-    unique_runs = df_plot["run_nr"].unique()
+    unique_runs = sorted(df_plot["run_nr"].unique())
 
-    # Create x positions (numeric positions for plotting)
-    x_pos = np.arange(len(unique_positions))
+    # Create x positions with more spacing between positions
+    x_spacing = 5
+    x_pos = np.arange(len(unique_positions)) * x_spacing
 
     # Create a color palette with different colors for each unique run_nr
-    colors = plt.cm.tab10(np.linspace(0, 1, len(unique_runs)))
-    color_map = dict(zip(unique_runs, colors))
+    colors = ["#2aa199", "#ff3b5b", "#433bff", "#ffad3b", "#8e19cd"]
+    colors_cycled = [colors[i % len(colors)] for i in range(len(unique_runs))]
+    color_map = dict(zip(unique_runs, colors_cycled))
 
-    # Calculate offset for each run to create gaps
-    offset_range = 1  # Total range for offsets
-    if len(unique_runs) > 1:
-        offsets = np.linspace(-offset_range / 2, offset_range / 2, len(unique_runs))
-    else:
-        offsets = [0]
+    # CRITICAL: offset_range must be smaller than x_spacing to prevent overlap
+    offset_range = 3
+    offsets = np.linspace(-offset_range / 2, offset_range / 2, len(unique_runs))
     offset_map = dict(zip(unique_runs, offsets))
 
     # Create scatter plot with both Score and Answer
-    for _, row in df_plot.iterrows():
-        # Find the x position for this Position
-        pos_index = np.where(unique_positions == row["Position"])[0][0]
-        run_nr = row["run_nr"]
+    for run_nr in unique_runs:
+        run_data = df_plot[df_plot["run_nr"] == run_nr]
         color = color_map[run_nr]
         offset = offset_map[run_nr]
+        for _, row in run_data.iterrows():
+            # Find the x position for this Position
+            pos_index = np.where(unique_positions == row["Position"])[0][0]
+            # Plot with offset and new spacing
+            x_position = x_pos[pos_index] + offset
+            plot_scatter(x_position, row, "Score", "_", color)
+            plot_scatter(x_position, row, "Answer", "|", color)
 
-        # Plot with offset
-        x_position = pos_index + offset
-        plot_scatter(x_position, row, "Score", "_", run_nr, color)
-        plot_scatter(x_position, row, "Answer", "|", run_nr, color)
-
-    # Set x-axis labels to exact Position values
+    # Set x-axis labels to exact Position values with new spacing
+    plt.xlim(-offset_range / 2 - 1, x_pos[-1] + offset_range / 2 + 2.5)  # Added more right margin
     plt.xticks(x_pos, unique_positions, ha="right", fontsize=11)
     plt.yticks(range(6))
     plt.ylim(0, 5.5)
 
     # Customize the plot
     plt.xlabel("Question IDs", fontsize=14, fontweight="bold")
-    plt.ylabel("Score", fontsize=14, fontweight="bold")
-    plt.title(f"Scoring and Answer Consistency for {qtype}", fontsize=16, fontweight="bold", pad=20)
-    plt.grid(True, alpha=0.3, linestyle="--")
+    plt.ylabel("Scoring Range", fontsize=14, fontweight="bold")
+    plt.title(f"Consistency of Scoring between Numerical and Textual Scoring for {qtype}", fontsize=16, fontweight="bold", pad=20)
+    plt.grid(True, alpha=0.35, linestyle="--")
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.15, right=0.85)  # Make room for legend
+    plt.subplots_adjust(bottom=0.15, right=0.85)
     plt.gca().set_facecolor("white")
 
     # Make Custom Legends
     legend_elements = [
-        Line2D([0], [0], marker="_", color="gray", markersize=15, linestyle="None", label="Score"),
-        Line2D([0], [0], marker="|", color="gray", markersize=15, linestyle="None", label="Answer"),
+        Line2D([0], [0], marker="_", color="gray", markersize=15, linestyle="None", label="Numerical Score"),
+        Line2D([0], [0], marker="|", color="gray", markersize=15, linestyle="None", label="Textual Score"),
     ]
-
-    # Add legend entries for each run with their colors
     for run_nr in unique_runs:
         color = color_map[run_nr]
         legend_elements.append(Line2D([0], [0], marker="o", color=color, markersize=10, linestyle="None", label=f"Iteration {run_nr[-1]}"))
-
     plt.legend(handles=legend_elements, loc="lower right", frameon=True, fancybox=True, shadow=True)
-    plt.show()
+
+    img_path.mkdir(exist_ok=True, parents=True)
+
+    plt.tight_layout()
+    plt.savefig(f"{img_path}/{qtype}.svg", format="svg")
 
 
-def plot_scatter(x_position, row, column, marker, run_nr, color):
+def plot_scatter(x_position, row, column, marker, color):
     plt.scatter(
         x_position,
         row[column],
@@ -190,11 +171,11 @@ def plot_scatter(x_position, row, column, marker, run_nr, color):
         s=250,
         alpha=0.8,
         edgecolors="white",
-        linewidth=1.5,
+        linewidth=2,
     )
 
 
-def scatter_plot(dfs: List[pd.DataFrame]):
+def scatter_plot(dfs: List[pd.DataFrame], img_path: Path = BASE_PATH / "data" / "img" / "scatterplot"):
     replacement_map = {
         "No semantic relation at all meaning": 1.0,
         "Same domain, but no matching semantical meaning": 2.0,
@@ -211,9 +192,7 @@ def scatter_plot(dfs: List[pd.DataFrame]):
     # Group by qtype and plot all runs together
     for qtype in qtypes:
         # Get all data for this qtype across all runs
-        qtype_data = merged[merged["qtype"] == qtype].sort_index()
-        create_scatter(qtype_data, qtype)
+        qtype_data = merged[merged["qtype"] == qtype]
+        create_scatter(qtype_data, qtype, img_path=img_path)
 
-
-if __name__ == "__main__":
-    read_csvs()
+    print(f"\nSaved all files within: '{img_path}'\n")
