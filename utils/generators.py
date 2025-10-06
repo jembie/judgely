@@ -47,13 +47,12 @@ class BalancedGenerator:
 
         return True
 
-    def _get_unique_qtypes(self, df: pd.DataFrame) -> List[np.ndarray]:
-        return df["qtype"].unique()
-
-    def _validate_amount(self, amount: int, df_len: int) -> bool:
-        if amount > df_len:
+    def _validate_amount(self, amount: int, qtype_len: int) -> bool:
+        if amount > qtype_len:
             raise IndexError(
-                f"The value provided for 'amount' ({amount =} > {df_len =}) is too high. Every 'qtype' must have at least as many entries as 'amount' for 'BalancedSetGenerator' instances."
+                f"The value provided for 'amount' ({amount=} > {qtype_len=}) is too high. "
+                f"Every 'qtype' must have at least as many entries as 'amount' "
+                f"for 'BalancedSetGenerator' instances."
             )
         return True
 
@@ -61,7 +60,7 @@ class BalancedGenerator:
         np.random.seed(seed=seed)
 
         for dataset_name, df in self.csv_dict.items():
-            unique_qtypes = self._get_unique_qtypes(df)
+            unique_qtypes = df["qtype"].unique()
 
             for qtype in unique_qtypes:
                 qtype_df = df[df["qtype"] == qtype].drop_duplicates(subset=["Question"])
@@ -69,13 +68,13 @@ class BalancedGenerator:
                 qtype_len = len(qtype_df)
 
                 # Make sure that the input is amount <= df_len
-                self._validate_amount(amount=amount, df_len=qtype_len)
+                self._validate_amount(amount=amount, qtype_len=qtype_len)
 
                 # Generate a np.ndarray[amount] with values ranging within the interval of [0, LAST_ROW] of the qtype
                 try:
                     random_sequence = np.random.choice(qtype_indices, size=amount, replace=False)
                 except Exception:
-                    print(f"[ERROR] while trying to parse np.random.choice with {qtype_len =}")
+                    print(f"[ERROR] while trying to parse np.random.choice with {qtype_len=}")
 
                 chosen_rows = qtype_df.loc[random_sequence]
                 questions, answers = self._generate_questions_answers(chosen_rows)

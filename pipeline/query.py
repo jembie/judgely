@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 from typing import List
+from datetime import datetime
 
 import pandas as pd
 
@@ -16,6 +17,7 @@ class Pipeline:
         self.generator = generator
         self._run_dir_set = False
         self._run_dir = "1"
+        self.results_path = None
 
     def _prepare_data_for_judge(self, jury_replies: List[str], dataholder: DataHolder):
         for index, answer in enumerate(dataholder.answers):
@@ -74,10 +76,14 @@ class Pipeline:
         return pd.concat(dfs, ignore_index=True)
 
     def _save_results(self, df: pd.DataFrame, dataholder: DataHolder) -> None:
-        results_path = BASE_PATH / "data" / "results" / self.judge.model / dataholder.dataset_name
+        dt = datetime.now()
+        formatted_date = dt.strftime("%Y-%b-%d-%Hh")
 
-        run_dir = self._get_next_run_directory(results_path=results_path)
-        run_dir.mkdir(exist_ok=True)
+        if self.results_path is None:
+            self.results_path = BASE_PATH / "data" / "results" / self.judge.model / dataholder.dataset_name / formatted_date
+
+        run_dir = self._get_next_run_directory(results_path=self.results_path)
+        run_dir.mkdir(exist_ok=True, parents=True)
 
         output_file = f"{run_dir}/{dataholder.qtype}.csv"
         df.index = dataholder.indices

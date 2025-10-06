@@ -6,28 +6,43 @@ from court import Judge, Jury
 from pipeline import Pipeline
 from utils import BalancedGenerator, ClientConfig
 
+from analysis import make_plots, ScoreComparison
+
+
 load_dotenv()
 
 BASE_URL = os.environ.get("BASE_URL")
 API_KEY = os.environ.get("API_KEY")
 
 
-def run(iterations: int = 5):
-    model = "Llama-4-Maverick-17B-128E-Instruct-FP8"
+def run_queries(
+    iterations: int = 5,
+    questions: int = 10,
+    judge_model: str = "Llama-4-Maverick-17B-128E-Instruct-FP8",
+    jury_model: str = "Qwen3-235B-A22B-Instruct-2507-FP8",
+    **llm_params,
+):
     config = ClientConfig(BASE_URL, API_KEY)
     generator = BalancedGenerator()
-    generator.generate_set(amount=10)
+    generator.generate_set(amount=questions)
 
-    # # # launch()
-    jury = Jury(model=model, client_config=config)
-    judge = Judge(model=model, client_config=config)
+    jury = Jury(model=jury_model, client_config=config)
+    judge = Judge(model=judge_model, client_config=config)
 
     pipeline = Pipeline(judge=judge, jury=jury, generator=generator)
 
     # # Run multiple iterations for analysis
     for _ in range(iterations):
-        pipeline.query(max_completion_tokens=2048)
+        pipeline.query(max_completion_tokens=2048, **llm_params)
+
+
+def run_analysis():
+    make_plots()
+    scores = ScoreComparison()
+    scores.count()
 
 
 if __name__ == "__main__":
-    run()
+    run_queries()
+    run_analysis()
+#
