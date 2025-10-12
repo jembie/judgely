@@ -31,7 +31,7 @@ def run_queries(
 
     pipeline = Pipeline(judge=judge, jury=jury, generator=generator)
 
-    # # Run multiple iterations for analysis
+    # Run multiple iterations for analysis
     for _ in range(iterations):
         pipeline.query(max_completion_tokens=2048, **llm_params)
 
