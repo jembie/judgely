@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple, TypedDict
+from typing import Dict, List, Tuple, TypedDict, Optional
 
 import numpy as np
 import pandas as pd
@@ -20,10 +20,10 @@ MessageTemplate: Message = {"role": "user", "content": ""}
 class DataHolder:
     questions: List[Message]
     answers: List[Message]
-    qtype: str
-    total_entries: int
     dataset_name: str
-    indices: np.ndarray
+    qtype: Optional[str] = None
+    total_entries: Optional[int] = None
+    indices: Optional[np.ndarray] = None
 
 
 class BalancedGenerator:
@@ -72,12 +72,9 @@ class BalancedGenerator:
 
                 self.data.append(
                     DataHolder(
-                        qtype=qtype,
                         dataset_name=dataset_name,
                         questions=questions,
                         answers=answers,
-                        total_entries=qtype_len,
-                        indices=random_sequence,
                     )
                 )
 
@@ -100,11 +97,13 @@ class BalancedGenerator:
 class SimpleGenerator:
     def __init__(self, data_path: Path | str = ""):
         # Temporary storage for loaded files
-        self._raw_dataframes: Dict[str, pd.DataFrame] = {}
+        self._raw_dataframes: Dict[str, pd.DataFrame] = load_files_as_pds
         self._data_files_path = Path(data_path) if data_path else Path(BASE_PATH, "data")
         self.data: List[DataHolder] = []
 
     def generate_set(self, seed: int = 42, amount: int = None) -> Dict[str, pd.DataFrame]:
+        self._raw_dataframes = load_files_as_pds(self._data_files_path)
+
         np.random.seed(seed=seed)
 
         for dataset_name, df in self._raw_dataframes.items():
@@ -132,8 +131,8 @@ class SimpleGenerator:
             questions_template = MessageTemplate.copy()
             answers_template = MessageTemplate.copy()
 
-            questions_template["content"] = row.Question
-            answers_template["content"] = row.Answer
+            questions_template["content"] = row.Ground_truth
+            answers_template["content"] = row.Diagnosis
 
             questions.append(questions_template)
             answers.append(answers_template)
@@ -150,7 +149,7 @@ def _validate_amount(amount: int, df_len: int) -> None:
         )
 
 
-def load_files_as_pds(self) -> None:
+def load_files_as_pds(path: Path | str) -> None:
     """Loads all readable data files from a given directory into pandas DataFrames.
 
     Args:
@@ -160,14 +159,16 @@ def load_files_as_pds(self) -> None:
     Returns:
         Dict[str, pd.DataFrame]: A dict of pandas DataFrames, where the 'key' equals to the name of the file.
     """
-    files_found = [path for path in self._data_files_path.glob("*") if path.is_file()]
+    path = Path(path)
+
+    files_found = [path for path in path.glob("*") if path.is_file()]
 
     results = {}
     for found in files_found:
         # Give us the file extension (.<ext>) and then remove the '.' leaving us only with <ext>
         file_extension = found.suffix.lstrip(".")
 
-        read_method = getattr(pd, f"read_{file_extension}")
+        read_method = getattr(pd, f"read_{file_extension}", None)
         if callable(read_method):
             results[found.stem] = read_method(found)
 
