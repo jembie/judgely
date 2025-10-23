@@ -47,15 +47,6 @@ class BalancedGenerator:
 
         return True
 
-    def _validate_amount(self, amount: int, qtype_len: int) -> bool:
-        if amount > qtype_len:
-            raise IndexError(
-                f"The value provided for 'amount' ({amount=} > {qtype_len=}) is too high. "
-                f"Every 'qtype' must have at least as many entries as 'amount' "
-                f"for 'BalancedSetGenerator' instances."
-            )
-        return True
-
     def generate_set(self, seed: int = 42, amount: int = 5) -> Dict[str, pd.DataFrame]:
         np.random.seed(seed=seed)
 
@@ -68,7 +59,7 @@ class BalancedGenerator:
                 qtype_len = len(qtype_df)
 
                 # Make sure that the input is amount <= df_len
-                self._validate_amount(amount=amount, qtype_len=qtype_len)
+                _validate_amount(amount, qtype_len)
 
                 # Generate a np.ndarray[amount] with values ranging within the interval of [0, LAST_ROW] of the qtype
                 try:
@@ -104,3 +95,80 @@ class BalancedGenerator:
             answers.append(answers_template)
 
         return questions, answers
+
+
+class SimpleGenerator:
+    def __init__(self, data_path: Path | str = ""):
+        # Temporary storage for loaded files
+        self._raw_dataframes: Dict[str, pd.DataFrame] = {}
+        self._data_files_path = Path(data_path) if data_path else Path(BASE_PATH, "data")
+        self.data: List[DataHolder] = []
+
+    def generate_set(self, seed: int = 42, amount: int = None) -> Dict[str, pd.DataFrame]:
+        np.random.seed(seed=seed)
+
+        for dataset_name, df in self._raw_dataframes.items():
+            if amount is None:
+                amount = len(df.index)
+
+            # Make sure that the input is amount <= df_len
+            _validate_amount(amount, len(df.index))
+
+            questions, answers = self._generate_questions_answers(df)
+
+            self.data.append(
+                DataHolder(
+                    dataset_name=dataset_name,
+                    questions=questions,
+                    answers=answers,
+                    total_entries=amount,
+                )
+            )
+
+    def _generate_questions_answers(self, df: pd.DataFrame) -> Tuple[List[Message], List[Message]]:
+        questions = []
+        answers = []
+        for row in df.itertuples():
+            questions_template = MessageTemplate.copy()
+            answers_template = MessageTemplate.copy()
+
+            questions_template["content"] = row.Question
+            answers_template["content"] = row.Answer
+
+            questions.append(questions_template)
+            answers.append(answers_template)
+
+        return questions, answers
+
+
+def _validate_amount(amount: int, df_len: int) -> None:
+    if amount > df_len:
+        raise IndexError(
+            f"The value provided for 'amount' ({amount=} > {df_len=}) is too high. "
+            f"Every 'qtype' must have at least as many entries as 'amount' "
+            f"for 'BalancedSetGenerator' instances."
+        )
+
+
+def load_files_as_pds(self) -> None:
+    """Loads all readable data files from a given directory into pandas DataFrames.
+
+    Args:
+        data_path (Path): Path object representing the base directory
+            containing the data files.
+
+    Returns:
+        Dict[str, pd.DataFrame]: A dict of pandas DataFrames, where the 'key' equals to the name of the file.
+    """
+    files_found = [path for path in self._data_files_path.glob("*") if path.is_file()]
+
+    results = {}
+    for found in files_found:
+        # Give us the file extension (.<ext>) and then remove the '.' leaving us only with <ext>
+        file_extension = found.suffix.lstrip(".")
+
+        read_method = getattr(pd, f"read_{file_extension}")
+        if callable(read_method):
+            results[found.stem] = read_method(found)
+
+    return results
