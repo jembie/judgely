@@ -6,12 +6,12 @@ from datetime import datetime
 import pandas as pd
 
 from court import Judge, Jury
-from utils import BASE_PATH, BalancedGenerator, DataHolder
+from utils import BASE_PATH, BalancedGenerator, DataHolder, SimpleGenerator, Message
 
 
 class Pipeline:
 
-    def __init__(self, judge: Judge, jury: Jury, generator: BalancedGenerator):
+    def __init__(self, judge: Judge = None, jury: Jury = None, generator: BalancedGenerator | SimpleGenerator = None):
         self.judge = judge
         self.jury = jury
         self.generator = generator
@@ -103,8 +103,32 @@ class Pipeline:
 
             judge_replies = []
             for answer in dataholder.answers:
-                judge_replies.append(self.judge.chat(answer))
+                judge_replies.append(self.judge.chat(answer, **kwargs))
 
             df: pd.DataFrame = self._convert_replies_into_dataframe(judge_replies=judge_replies, jury_replies=jury_replies)
 
             self._save_results(df=df, dataholder=dataholder)
+
+    def _prep_for_comparison(
+        self,
+        dataholder: DataHolder,
+    ) -> List[Message]:
+        merged = []
+        for questions_and_answers in zip(dataholder.questions, dataholder.answers):
+            question, answer = questions_and_answers
+            merged_content = f"1: {question["content"]}\n2: {answer["content"]}"
+            merged.append({"role": "user", "content": merged_content})
+
+        return merged
+
+    def compare(self, **kwargs):
+        self._run_dir_set = False
+
+        judge_replies = []
+        for dataholder in self.generator.data:
+
+            merged = self._prep_for_comparison(dataholder)
+            for request in merged:
+                judge_replies.append(self.judge.chat(request, **kwargs))
+
+            
