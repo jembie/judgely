@@ -13,9 +13,9 @@ from analysis import make_plots, ScoreComparison
 
 load_dotenv()
 
-# BASE_URL = os.environ.get("BASE_URL")
-# API_KEY = os.environ.get("API_KEY")
-# config = ClientConfig(BASE_URL, API_KEY)
+BASE_URL = os.environ.get("BASE_URL")
+API_KEY = os.environ.get("API_KEY")
+config = ClientConfig(BASE_URL, API_KEY)
 
 
 def run_queries(
@@ -66,12 +66,12 @@ def run_judge(
     generator = SimpleGenerator()
     generator.generate_set(questions)
 
-    judge = Judge(model=judge_model)
+    judge = Judge(model=judge_model, client_config=config)
 
     pipeline = Pipeline(judge=judge, generator=generator)
 
     for _ in range(iterations):
-        pipeline.compa`<re(**llm_params)
+        pipeline.compare(**llm_params)
 
 
 if __name__ == "__main__":
