@@ -130,5 +130,3 @@ class Pipeline:
             merged = self._prep_for_comparison(dataholder)
             for request in merged:
                 judge_replies.append(self.judge.chat(request, **kwargs))
-
-            
