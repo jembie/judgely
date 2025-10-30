@@ -109,6 +109,25 @@ class Pipeline:
 
             self._save_results(df=df, dataholder=dataholder)
 
+    def _save_compare_results(self, replies: List, dataholder: DataHolder, iteration_nr: int):
+        dt = datetime.now()
+        formatted_date = dt.strftime("%Y-%b-%d-%Hh")
+
+        judge_sc = f"JUDGE_SCORE_{iteration_nr}"
+        judge_conf = f"JUDGE_CONFIDENCE_{iteration_nr}"
+        iter_start = f"IterationNr_{iteration_nr}_start"
+
+        df = dataholder.dataset
+        df[judge_sc] = ""
+        df[judge_conf] = ""
+        df[iter_start] = formatted_date
+
+        for index, reply in zip(df.index, replies):
+            df.loc[index, judge_sc] = reply.judge_score.value
+            df.loc[index, judge_conf] = reply.judge_confidence
+
+        df.to_csv("test.csv", index=False)
+
     def _prep_for_comparison(
         self,
         dataholder: DataHolder,
@@ -121,7 +140,7 @@ class Pipeline:
 
         return merged
 
-    def compare(self, **kwargs):
+    def compare(self, iteration_nr: int, **kwargs):
         self._run_dir_set = False
 
         judge_replies = []
@@ -129,4 +148,7 @@ class Pipeline:
 
             merged = self._prep_for_comparison(dataholder)
             for request in merged:
-                judge_replies.append(self.judge.chat(request, **kwargs))
+                response = self.judge.chat(request, **kwargs)
+                judge_replies.append(response)
+
+            self._save_compare_results(judge_replies, dataholder, iteration_nr)
