@@ -21,6 +21,7 @@ class DataHolder:
     questions: List[Message]
     answers: List[Message]
     dataset_name: str
+    dataset: pd.DataFrame
     qtype: Optional[str] = None
     total_entries: Optional[int] = None
     indices: Optional[np.ndarray] = None
@@ -42,8 +43,7 @@ class BalancedGenerator:
             return False
 
         for csv in csv_files:
-            dataset_name = csv.stem
-            self.csv_dict[dataset_name] = pd.read_csv(csv)
+            self.csv_dict[csv.stem] = pd.read_csv(csv)
 
         return True
 
@@ -73,6 +73,7 @@ class BalancedGenerator:
                 self.data.append(
                     DataHolder(
                         dataset_name=dataset_name,
+                        dataset=chosen_rows,
                         questions=questions,
                         answers=answers,
                     )
@@ -97,7 +98,7 @@ class BalancedGenerator:
 class SimpleGenerator:
     def __init__(self, data_path: Path | str = ""):
         # Temporary storage for loaded files
-        self._raw_dataframes: Dict[str, pd.DataFrame] = load_files_as_pds
+        self._raw_dataframes: Dict[str, pd.DataFrame] = None
         self._data_files_path = Path(data_path) if data_path else Path(BASE_PATH, "data")
         self.data: List[DataHolder] = []
 
@@ -106,18 +107,27 @@ class SimpleGenerator:
 
         np.random.seed(seed=seed)
 
-        for dataset_name, df in self._raw_dataframes.items():
+        for dataset_path, df in self._raw_dataframes.items():
+            _dataset_name = dataset_path.stem
+
             if amount is None:
                 amount = len(df.index)
 
             # Make sure that the input is amount <= df_len
             _validate_amount(amount, len(df.index))
 
-            questions, answers = self._generate_questions_answers(df)
+            try:
+                random_sequence = np.random.choice(len(df.index), size=amount, replace=False)
+            except Exception:
+                print(f"[ERROR] while trying to parse np.random.choice with {len(df.index)=}")
+
+            chosen_rows = df.loc[random_sequence]
+            questions, answers = self._generate_questions_answers(chosen_rows)
 
             self.data.append(
                 DataHolder(
-                    dataset_name=dataset_name,
+                    dataset_name=_dataset_name,
+                    dataset=chosen_rows,
                     questions=questions,
                     answers=answers,
                     total_entries=amount,
@@ -170,6 +180,6 @@ def load_files_as_pds(path: Path | str) -> None:
 
         read_method = getattr(pd, f"read_{file_extension}", None)
         if callable(read_method):
-            results[found.stem] = read_method(found)
+            results[found] = read_method(found)
 
     return results
