@@ -15,7 +15,7 @@ load_dotenv()
 
 BASE_URL = os.environ.get("BASE_URL")
 API_KEY = os.environ.get("API_KEY")
-config = ClientConfig(BASE_URL, API_KEY)
+# config = ClientConfig(BASE_URL, API_KEY)
 
 
 def run_queries(
@@ -58,7 +58,7 @@ class ResponseFormat(BaseModel):
 
 
 def run_judge(
-    iterations: int = 5,
+    repetitions: int = 5,
     questions: int = 10,
     judge_model: str = "deepseek-r1:8b",
     **llm_params,
@@ -66,12 +66,13 @@ def run_judge(
     generator = SimpleGenerator()
     generator.generate_set(questions)
 
-    judge = Judge(model=judge_model, client_config=config)
+    judge = Judge(model=judge_model)
 
     pipeline = Pipeline(judge=judge, generator=generator)
 
-    for _ in range(iterations):
-        pipeline.compare(**llm_params)
+    # Run from `[1, repetitions]`
+    for iteration_nr in range(1, repetitions + 1):
+        pipeline.compare(iteration_nr, **llm_params)
 
 
 if __name__ == "__main__":
