@@ -15,7 +15,7 @@ load_dotenv()
 
 BASE_URL = os.environ.get("BASE_URL")
 API_KEY = os.environ.get("API_KEY")
-# config = ClientConfig(BASE_URL, API_KEY)
+config = ClientConfig(BASE_URL, API_KEY)
 
 
 def run_queries(
@@ -28,16 +28,14 @@ def run_queries(
     generator = BalancedGenerator()
     generator.generate_set(amount=questions)
 
-    # jury = Jury(model=jury_model, client_config=config)
-    # judge = Judge(model=judge_model, client_config=config)
+    jury = Jury(model=jury_model, client_config=config)
+    judge = Judge(model=judge_model, client_config=config)
 
+    pipeline = Pipeline(judge=judge, jury=jury, generator=generator)
 
-#
-# pipeline = Pipeline(judge=judge, jury=jury, generator=generator)
-#
-# Run multiple iterations for analysis
-# for _ in range(iterations):
-# pipeline.query(max_completion_tokens=2048, **llm_params)
+    # Run multiple iterations for analysis
+    for _ in range(iterations):
+        pipeline.query(max_completion_tokens=2048, **llm_params)
 
 
 def run_analysis():
