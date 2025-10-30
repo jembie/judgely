@@ -2,7 +2,6 @@ from abc import ABC
 from typing import Optional, final
 
 from openai import OpenAI
-from openai.types.chat import ChatCompletion
 
 from utils import ClientConfig, Message
 
