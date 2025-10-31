@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from typing import List
 from datetime import datetime
+from timeit import default_timer as timer
 
 import pandas as pd
 
@@ -110,14 +111,19 @@ class Pipeline:
             self._save_results(df=df, dataholder=dataholder)
 
     def _save_compare_results(self, replies: List, dataholder: DataHolder, iteration_nr: int):
+
         dt = datetime.now()
-        formatted_date = dt.strftime("%Y-%b-%d-%Hh")
+        formatted_date = dt.strftime("%Y-%b-%d-%H-%M")
 
-        judge_sc = f"JUDGE_SCORE_{iteration_nr}"
-        judge_conf = f"JUDGE_CONFIDENCE_{iteration_nr}"
-        iter_start = f"IterationNr_{iteration_nr}_start"
+        judge_sc = f"JUDGE_SCORE_{iteration_nr}_{self.judge.model}"
+        judge_conf = f"JUDGE_CONFIDENCE_{iteration_nr}_{self.judge.model}"
+        iter_start = f"IterationNr_{iteration_nr}_start_{self.judge.model}"
 
-        df = dataholder.dataset
+        if Path("results.csv").exists():
+            df = pd.read_csv("results.csv")
+        else:
+            df = dataholder.dataset
+
         df[judge_sc] = ""
         df[judge_conf] = ""
         df[iter_start] = formatted_date
@@ -126,7 +132,7 @@ class Pipeline:
             df.loc[index, judge_sc] = reply.judge_score.value
             df.loc[index, judge_conf] = reply.judge_confidence
 
-        df.to_csv("test.csv", index=False)
+        df.to_csv("results.csv", index=False)
 
     def _prep_for_comparison(
         self,
@@ -141,14 +147,18 @@ class Pipeline:
         return merged
 
     def compare(self, iteration_nr: int, **kwargs):
+
         self._run_dir_set = False
 
         judge_replies = []
         for dataholder in self.generator.data:
 
             merged = self._prep_for_comparison(dataholder)
+            start = timer()
             for request in merged:
                 response = self.judge.chat(request, **kwargs)
                 judge_replies.append(response)
 
             self._save_compare_results(judge_replies, dataholder, iteration_nr)
+            end = timer()
+            print(f"Execution of Iteration '{iteration_nr}' took: {end - start}s")

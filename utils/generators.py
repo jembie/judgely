@@ -99,7 +99,7 @@ class SimpleGenerator:
     def __init__(self, data_path: Path | str = ""):
         # Temporary storage for loaded files
         self._raw_dataframes: Dict[str, pd.DataFrame] = None
-        self._data_files_path = Path(data_path) if data_path else Path(BASE_PATH, "data")
+        self._data_files_path = Path(data_path) if data_path else Path(BASE_PATH, "data", "csv")
         self.data: List[DataHolder] = []
 
     def generate_set(self, seed: int = 42, amount: int = None) -> Dict[str, pd.DataFrame]:
@@ -120,6 +120,7 @@ class SimpleGenerator:
                 random_sequence = np.random.choice(len(df.index), size=amount, replace=False)
             except Exception:
                 print(f"[ERROR] while trying to parse np.random.choice with {len(df.index)=}")
+                return
 
             chosen_rows = df.loc[random_sequence]
             questions, answers = self._generate_questions_answers(chosen_rows)

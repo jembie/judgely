@@ -56,13 +56,13 @@ class ResponseFormat(BaseModel):
 
 
 def run_judge(
-    repetitions: int = 5,
-    questions: int = 10,
+    repetitions: int = 1,
+    questions: int = 2,
     judge_model: str = "deepseek-r1:8b",
     **llm_params,
 ):
     generator = SimpleGenerator()
-    generator.generate_set(questions)
+    generator.generate_set(amount=questions)
 
     judge = Judge(model=judge_model)
 
